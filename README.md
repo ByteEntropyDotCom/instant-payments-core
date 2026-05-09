@@ -100,3 +100,7 @@ export KAFKA_KEY='your_key'
 export KAFKA_SECRET='your_secret'
 mvn spring-boot:run -Dspring.profiles.active=cloud
 ```
+
+## LICENSE
+
+MIT 
