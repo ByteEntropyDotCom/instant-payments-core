@@ -1,4 +1,5 @@
 package com.byteentropy.instant_payments_core.service;
+
 import com.byteentropy.instant_payments_core.model.*;
 import com.byteentropy.instant_payments_core.service.strategy.PaymentRailStrategy;
 import com.byteentropy.instant_payments_core.util.IdempotencyManager;
@@ -17,15 +18,22 @@ public class PaymentService {
         this.idempotencyManager = im;
     }
 
-    public PaymentResponse processPayment(PaymentRequest request) {
-        if (!idempotencyManager.isUnique(request.transactionId())) 
-            return new PaymentResponse(request.transactionId(), "DUPLICATE", "Skipped");
+    public void processPayment(PaymentRequest request) {
+        // 1. Idempotency Check
+        if (!idempotencyManager.isUnique(request.transactionId())) {
+            System.out.println("DEBUG: Duplicate transaction ignored: " + request.transactionId());
+            return;
+        }
         
+        // 2. Find Strategy
         PaymentRailStrategy strategy = strategies.get(request.rail().toUpperCase());
-        if (strategy == null) return new PaymentResponse(request.transactionId(), "FAILED", "No Strategy");
+        if (strategy == null) {
+            System.err.println("ERROR: No strategy found for rail: " + request.rail());
+            return;
+        }
 
-        return strategy.process(request) 
-            ? new PaymentResponse(request.transactionId(), "SUCCESS", "OK")
-            : new PaymentResponse(request.transactionId(), "FAILED", "Rail Error");
+        // 3. Dispatch to Rail Topic
+        strategy.dispatch(request);
+        System.out.println("DEBUG: Transaction " + request.transactionId() + " dispatched to " + request.rail());
     }
 }

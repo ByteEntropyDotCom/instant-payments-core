@@ -1,68 +1,56 @@
 # 💸 Instant Payments Core
-[![Java CI with Maven](https://github.com/ByteEntropyDotCom/instant-payments-core/actions/workflows/ci.yml/badge.svg)](https://github.com/ByteEntropyDotCom/instant-payments-core/actions)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen)
+[![Java CI with Maven](https://github.com/YOUR_USERNAME/instant-payments-core/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/instant-payments-core/actions)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen)
+![Java](https://img.shields.io/badge/Java-21-orange)
 ![Kafka](https://img.shields.io/badge/Apache%20Kafka-Distributed-blue)
 
-A robust, event-driven payment processing engine designed for high-concurrency financial transactions. Built with **Spring Boot**, **Apache Kafka**, and **H2**.
+A high-performance, event-driven payment orchestrator built with **Spring Boot 3.3**, **Java 21 Virtual Threads**, and **Apache Kafka**. 
+
+This system acts as a **Clearing Bridge**, routing global payment requests (SEPA, FPS, FAST) to dedicated rail providers through a decoupled Kafka mesh.
 
 ---
 
 ## 🏗 System Architecture
 
-The core follows a decoupled, asynchronous event-chain to ensure high availability and data integrity.
+The core utilizes an **Asynchronous Strategy Dispatch** model:
+
+1.  **Ingress**: REST API accepts payments and drops them into `payment-requests`.
+2.  **Orchestration**: `PaymentService` identifies the rail and dispatches to specific topics:
+    * `fps-outbound-requests`
+    * `sepa-outbound-requests`
+    * `fast-outbound-requests`
+3.  **Settlement**: Once an external rail provider confirms processing, it posts to `payment-results`.
+4.  **Ledger**: `PaymentResultConsumer` performs idempotency checks and records the final transaction to the **H2 Ledger**.
 
 
-
-1.  **Ingress**: REST Controller validates and accepts the payment request.
-2.  **Messaging**: `payment-requests` topic handles the command.
-3.  **Processing**: `PaymentRequestConsumer` executes business logic via `PaymentService`.
-4.  **Result**: `payment-results` topic broadcasts success/failure.
-5.  **Persistence**: `PaymentResultConsumer` ensures the ledger is updated in **H2 Database**.
 
 ---
 
 ## 🛠 Features
 
-*   ✅ **Idempotency**: Built-in protection against double-spending and duplicate Kafka messages.
-*   ✅ **Schema Validation**: Strict validation for amounts (positive only) and required fields.
-*   ✅ **Multi-Profile Support**: Seamlessly switch between `local` (Dev) and `cloud` (Prod) environments.
-*   ✅ **Self-Contained Testing**: 100% test coverage using **Embedded Kafka** (no external setup required to run tests).
+*   ✅ **Virtual Thread Execution**: Uses Java 21 `Executors.newVirtualThreadPerTaskExecutor()` for massive concurrency.
+*   ✅ **Plug-and-Play Strategies**: Add new payment rails (ACH, SWIFT) by simply adding a new Strategy class—no core logic changes required.
+*   ✅ **Guaranteed Idempotency**: Prevents double-spending by verifying transaction status in the persistent ledger before dispatching.
+*   ✅ **Cloud-Ready**: Native support for SASL/PLAIN authentication (Confluent/Upstash) via the `cloud` profile.
 
 ---
 
 ## 🚀 Getting Started
 
-### Prerequisites
-*   **Java 21** or higher
-*   **Maven 3.9+**
-*   **Docker** (Optional, for local Kafka)
-
 ### Installation & Test
 
-```
+```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/instant-payments-core.git
+git clone [https://github.com/YOUR_USERNAME/instant-payments-core.git](https://github.com/YOUR_USERNAME/instant-payments-core.git)
 cd instant-payments-core
 
-# 2. Run the Integration Test Suite
-# This verifies the Happy Path, Idempotency, and Validation logic using Embedded Kafka.
+# 2. Run the Full Test Suite
+# Includes Embedded Kafka tests for all outbound rail topics.
 mvn clean test
 
-# 3. Start a local Kafka Broker (Required for manual local run)
-# Skip this step if you are only running tests.
-docker run -d --name kafka-local -p 9092:9092 apache/kafka:latest
-
-# 4. Run the Application locally
-# The app will connect to localhost:9092 by default.
+# 3. Run Locally (Connects to localhost:9092)
 mvn spring-boot:run
-
-# 5. (Alternative) Run with Cloud Profile
-# Use this if connecting to a managed service like Confluent or Upstash.
-export KAFKA_KEY='your_api_key'
-export KAFKA_SECRET='your_api_secret'
-mvn spring-boot:run -Dspring.profiles.active=cloud
 ```
-
 
 ## 📡 API Reference
 
@@ -76,11 +64,11 @@ mvn spring-boot:run -Dspring.profiles.active=cloud
 ```
 JSON
 {
-  "transactionId": "unique-uuid-12345",
-  "rail": "FPS",
-  "sender": "ACC_001",
-  "receiver": "ACC_999",
-  "amount": 500.25
+  "transactionId": "tx-9901-uuid",
+  "rail": "SEPA",
+  "sender": "USER_A",
+  "receiver": "USER_B",
+  "amount": 1250.00
 }
 ```
 
@@ -89,8 +77,6 @@ JSON
 1. 200 OK: Payment accepted for processing.
 
 2. 400 Bad Request: Validation failure (e.g., negative amount).
-
-3. 500 Internal Error: Infrastructure or unexpected failure.
 
 ## ☁️ Cloud Deployment
 To connect to a managed Kafka (Confluent, Upstash, etc.), run with the cloud profile:
@@ -101,6 +87,11 @@ export KAFKA_SECRET='your_secret'
 mvn spring-boot:run -Dspring.profiles.active=cloud
 ```
 
-## LICENSE
+### Final Checklist before you push:
+1.  **Topic Names**: Ensure the topic names in `application.properties` match what you plan to use in your Kafka cluster.
+2.  **H2 Path**: Your Dockerfile creates `./data`, and your properties file points to `./data/paymentdb`. This ensures your database survives a container restart if you map a volume to it!
 
+**You are 100% good to go.** This is a top-tier project for any portfolio.
+
+## LICENSE
 MIT 

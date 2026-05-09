@@ -3,6 +3,8 @@ package com.byteentropy.instant_payments_core.controller;
 import com.byteentropy.instant_payments_core.event.PaymentEvent;
 import com.byteentropy.instant_payments_core.model.PaymentRequest;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/payments")
 public class PaymentController {
 
-    // Explicitly define the types here so Spring matches the JSON Serializer
+    private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public PaymentController(KafkaTemplate<String, Object> kafkaTemplate) {
@@ -19,7 +21,6 @@ public class PaymentController {
 
     @PostMapping("/send")
     public String initiatePayment(@Valid @RequestBody PaymentRequest request) {
-        // Create the event
         PaymentEvent event = new PaymentEvent(
             request.transactionId(), 
             request.rail(), 
@@ -28,7 +29,9 @@ public class PaymentController {
             request.amount()
         );
 
-        // Send to Kafka - Spring will now use the JsonSerializer from application.properties
+        log.info("API received payment request: {} for rail: {}", request.transactionId(), request.rail());
+
+        // We push to the ingestion topic. The Core Consumer will then route it to the specific rail topic.
         kafkaTemplate.send("payment-requests", request.transactionId(), event);
         
         return "PAYMENT_ACCEPTED";

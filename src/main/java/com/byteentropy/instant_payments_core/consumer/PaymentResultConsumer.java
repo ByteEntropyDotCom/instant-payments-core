@@ -19,12 +19,15 @@ public class PaymentResultConsumer {
 
     @KafkaListener(topics = "payment-results", groupId = "payment-core-group")
     public void consume(PaymentResultEvent event) {
-        System.out.println("DEBUG: Final Result received for TX: " + event.transactionId() + " Status: " + event.status());
+        // This is where the real work happens when the provider (SEPA/FPS) replies
+        System.out.println("DEBUG: Provider Result received for TX: " + event.transactionId() + " | Status: " + event.status());
         
         if ("SUCCESS".equals(event.status())) {
             ledgerService.recordTransaction(event.transactionId(), event.amount());
         }
         
-        messagingTemplate.convertAndSend("/topic/payments", new PaymentResponse(event.transactionId(), event.status(), event.message()));
+        // Notify Frontend via WebSocket
+        messagingTemplate.convertAndSend("/topic/payments", 
+            new PaymentResponse(event.transactionId(), event.status(), event.message()));
     }
 }
