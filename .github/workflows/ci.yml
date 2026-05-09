@@ -21,5 +21,4 @@ jobs:
         cache: maven
 
     - name: Build and Test with Maven
-      # This runs your 4 integration tests using Embedded Kafka in the cloud
       run: mvn clean test
