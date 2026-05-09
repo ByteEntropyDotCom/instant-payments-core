@@ -33,7 +33,7 @@ The core follows a decoupled, asynchronous event-chain to ensure high availabili
 ## 🚀 Getting Started
 
 ### Prerequisites
-*   **Java 17** or higher
+*   **Java 21** or higher
 *   **Maven 3.9+**
 *   **Docker** (Optional, for local Kafka)
 
