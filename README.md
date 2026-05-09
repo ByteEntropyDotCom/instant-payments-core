@@ -1,5 +1,5 @@
 # 💸 Instant Payments Core
-[![Java CI with Maven](https://github.com/YOUR_USERNAME/instant-payments-core/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/instant-payments-core/actions)
+[![Java CI with Maven](https://github.com/ByteEntropyDotCom/instant-payments-core/actions/workflows/ci.yml/badge.svg)](https://github.com/ByteEntropyDotCom/instant-payments-core/actions)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen)
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Kafka](https://img.shields.io/badge/Apache%20Kafka-Distributed-blue)
